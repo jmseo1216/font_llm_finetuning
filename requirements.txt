@@ -1,0 +1,9 @@
+torch
+transformers
+datasets
+peft
+scikit-learn
+tokenizers
+cairosvg
+pillow
+numpy

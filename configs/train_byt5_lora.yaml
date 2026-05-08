@@ -1,0 +1,11 @@
+model_name: google/byt5-small
+tokenizer_dir: tokenizer/artifact
+train_jsonl: dataset/processed/train.jsonl
+val_jsonl: dataset/processed/val.jsonl
+output_dir: checkpoints/byt5_lora
+batch_size: 1
+grad_accum: 16
+lr: 2e-4
+epochs: 10
+max_src_len: 1024
+max_tgt_len: 1024
