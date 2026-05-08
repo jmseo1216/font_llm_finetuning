@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import argparse
+import json
+from pathlib import Path
 import numpy as np
 from datasets import Dataset as HFDataset
 from transformers import (
@@ -74,3 +76,7 @@ if __name__ == "__main__":
     )
     trainer.train()
     trainer.save_model(args.out_dir)
+    tokenizer.save_pretrained(args.out_dir)
+    meta = {"base_model": args.model_name, "tokenizer_vocab_size": len(tokenizer)}
+    Path(args.out_dir).mkdir(parents=True, exist_ok=True)
+    (Path(args.out_dir) / "train_meta.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")

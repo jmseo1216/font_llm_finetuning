@@ -72,3 +72,23 @@ python inference/generate.py --input_svg path/to/outline.svg --output_svg out.sv
 - topology constraint decoding
 - invalid path repair rule 기반 후처리
 - command-aware loss weighting (M/L/C/Z)
+
+## Inference 입력 설명 (중요)
+- `train.jsonl/val.jsonl/test.jsonl`은 **학습용 전처리 산출물**입니다.
+- `inference/generate.py`의 `--input_svg`는 **실제 outline SVG 파일 경로**를 넣어야 합니다.
+- 즉 학습은 JSONL(토큰 시퀀스)로 하고, 추론은 SVG 원본으로 실행합니다.
+
+### test.jsonl 샘플 1개를 실제 추론에 쓰고 싶을 때
+1. JSONL row를 outline SVG로 복원
+```bash
+python inference/generate_from_jsonl.py --jsonl dataset/processed/test.jsonl --sample_id 46 --output_svg tmp_outline_46.svg
+```
+2. 복원한 SVG를 모델에 입력
+```bash
+python inference/generate.py --input_svg tmp_outline_46.svg --adapter_dir checkpoints/byt5_lora --tokenizer_dir checkpoints/byt5_lora --output_svg pred_46.svg
+```
+
+### size mismatch 오류 원인과 해결
+- 원인: 학습 시 `resize_token_embeddings(len(custom_tokenizer))`를 했는데, 추론 시 base model만 로드하면 vocab 크기가 달라져 adapter 로드가 실패.
+- 해결: 추론에서도 동일 tokenizer 로드 후 `resize_token_embeddings(len(tok))`를 먼저 수행한 뒤 LoRA adapter를 로드해야 함.
+- 본 저장소의 `inference/generate.py`는 이 순서를 반영했고, 학습 시 `train_meta.json`을 저장해 base model 추적 가능.
