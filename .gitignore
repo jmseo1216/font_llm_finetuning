@@ -1,0 +1,18 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Training outputs
+checkpoints/
+wandb/
+
+# Dataset outputs
+dataset/processed*/
+dataset/__pycache__/
+
+# Generated SVG outputs
+*.svg
+
+# Optional logs
+*.log

@@ -42,26 +42,57 @@ if __name__ == "__main__":
 
     adapter_dir = Path(args.adapter_dir)
     meta = load_train_meta(adapter_dir)
-    base_model_name = args.base_model or meta.get("base_model", "google/byt5-small")
+    base_model_name = args.base_model or meta.get("base_model", "google/flan-t5-small")
 
     tok = PreTrainedTokenizerFast.from_pretrained(args.tokenizer_dir)
+    print(f"tok: {tok}")
+    print(f'test:{tok.tokenize("<CMD_M> <NUM_168>")}')
     model = AutoModelForSeq2SeqLM.from_pretrained(base_model_name)
+    # model.config.decoder_start_token_id = tok.pad_token_id  # gpt 보고 추가한 것 
+    
     model.resize_token_embeddings(len(tok))
     model.config.tie_word_embeddings = False
-    model = PeftModel.from_pretrained(model, str(adapter_dir))
+    # model = PeftModel.from_pretrained(model, str(adapter_dir))
     model.to(args.device)
     model.eval()
 
     path_d, w, h = read_svg_path(Path(args.input_svg))
-    src = "<OUTLINE> " + " ".join(quantize_coordinates(tokenize_path(path_d), w, h))
-    enc = tok(src, return_tensors="pt").to(args.device)
+    print(f"path_d: {path_d }")
+    print(f"length_path_d: {len(path_d)}")
+    src = "<OUTLINE> " + " ".join(quantize_coordinates(tokenize_path(path_d), w, h, bins=256))
 
+    print(f"src: {src}")
+    enc = tok(src, return_tensors="pt").to(args.device)
+    print(f"enc: {enc}")
     with torch.no_grad():
-        gen = model.generate(**enc, max_new_tokens=1024)
+        # gen = model.generate(**enc, max_new_tokens=1024)
+        # gen = model.generate(
+        #     **enc,
+        #     max_new_tokens=256,
+        #     do_sample=True,
+        #     top_k=20,
+        #     top_p=0.9,
+        #     temperature=0.8,
+        #     repetition_penalty=1.2,
+        #     eos_token_id=tok.eos_token_id,
+        #     pad_token_id=tok.pad_token_id,
+        # )
+        # gpt가 알려준거 
+        gen = model.generate(
+            **enc,
+            max_new_tokens=256,
+            do_sample=False,
+            num_beams=4,
+            repetition_penalty=1.5,
+            no_repeat_ngram_size=3,
+        )
 
     out_text = tok.decode(gen[0], skip_special_tokens=False)
+    print(f"out_test: {out_text[:15]}")
     toks = clean_tokens(out_text.split())
-    path_tokens = dequantize_sequence(toks, w, h)
+    print(f"toks: {toks}")
+    print(f"len toks: {len(toks)}")
+    path_tokens = dequantize_sequence(toks, w, h,bins=256)
     svg = TEMPLATE.format(w=w, h=h, d=tokens_to_svg_path(path_tokens))
     Path(args.output_svg).write_text(svg, encoding="utf-8")
     print(args.output_svg)

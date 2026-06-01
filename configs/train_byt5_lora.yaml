@@ -1,4 +1,4 @@
-model_name: google/byt5-small
+model_name: google/flan-t5-small   # google/byt5-small
 tokenizer_dir: tokenizer/artifact
 train_jsonl: dataset/processed/train.jsonl
 val_jsonl: dataset/processed/val.jsonl
@@ -9,3 +9,4 @@ lr: 2e-4
 epochs: 10
 max_src_len: 1024
 max_tgt_len: 1024
+
